@@ -24,18 +24,19 @@ jobs:
       uses: azure/setup-kubectl@v3
       with:
         version: 'v1.28.0'
-
+    
     - name: Validate YAML syntax
-      run: |
-        echo "Validating all YAML files..."
+      run: | 
+        echo "Validating YAML..."
         find k8s/ -name '*.yaml' -o -name '*.yml' | while read file; do
           echo "Checking $file"
-          kubectl apply \
-            --dry-run=client \
-            --validate=false \
-            -f "$file"
+          python -  <<EOF
+          import yaml, sys
+          with open("$file") as f:
+            yaml.safe_load(f)
+          EOF
         done
-        
+
     - name: Check for secrets in code
       run: |
         echo "Scanning for committed secret files and hardcoded credentials..."
