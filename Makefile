@@ -13,7 +13,6 @@ help:
 	@echo "make logs-mailhog    - Tail logs from MailHog pod"
 	@echo "make scale           - Scale API to 3 replicas"
 
-# Deploy all resources
 deploy:
 	@echo "Deploying VVMA to Kubernetes..."
 	kubectl apply -f k8s/base/namespace.yaml
@@ -29,7 +28,6 @@ deploy:
 	@echo ""
 	@make status
 
-# Delete all resources
 delete:
 	@echo "Deleting VVMA from Kubernetes..."
 	kubectl delete -f k8s/base/api/ --ignore-not-found=true
@@ -38,7 +36,6 @@ delete:
 	kubectl delete -f k8s/base/namespace.yaml --ignore-not-found=true
 	@echo "✅ All resources deleted!"
 
-# Show status of all resources
 status:
 	@echo "=== Namespace ==="
 	kubectl get namespace vvma
@@ -58,33 +55,26 @@ status:
 	@echo "=== PVCs ==="
 	kubectl get pvc -n vvma
 
-# Validate YAML files
 validate:
 	@./scripts/validate.sh
 
-# Tail API logs
 logs-api:
 	kubectl logs -n vvma -l app=vvma-api -f --max-log-requests=10
 
-# Tail MySQL logs
 logs-mysql:
 	kubectl logs -n vvma -l app=mysql -f
 
-# Tail MailHog logs
 logs-mailhog:
 	kubectl logs -n vvma -l app=mailhog -f
 
-# Scale API
 scale:
 	kubectl scale deployment vvma-api -n vvma --replicas=3
 	@echo "Scaled API to 3 replicas"
 
-# Restart API
 restart-api:
 	kubectl rollout restart deployment/vvma-api -n vvma
 	@echo "API deployment restarted"
 
-# Restart MySQL
 restart-mysql:
 	kubectl delete pod -n vvma -l app=mysql
 	@echo "MySQL pod deleted (will be recreated by StatefulSet)"

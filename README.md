@@ -4,33 +4,20 @@ A Kubernetes deployment for the VVMA (Very Vulnerable Management API) - a delibe
 
 ## 🎯 Why Kubernetes for VVMA?
 
-While VVMA could run with `docker-compose`, Kubernetes provides enterprise-grade benefits:
+While VVMA can run with docker-compose, Kubernetes was chosen to model production-grade application deployment.
 
-### High Availability & Self-Healing
-- **Automatic Recovery**: If the API crashes, Kubernetes restarts it within seconds
-- **Pod Distribution**: Run multiple replicas across different nodes for redundancy
+### Key benefits:
+```
+High availability & self-healing: Atomatic restarts and replica management keep the API running even when pods fail.
 
-### Scalability
-- **Horizontal Scaling**: Scale from 1 to 100 API replicas with a single command
-- **Resource Efficiency**: Pack workloads efficiently across your cluster
-- **Auto-scaling Ready**: Foundation for HPA (Horizontal Pod Autoscaler) when needed
+Scalability: Easily scale the API horizontally and lay the groundwork for autoscaling when needed.
 
-### Operational Excellence
-- **Zero-Downtime Deployments**: Rolling updates ensure continuous availability
-- **Rollback Safety**: Instantly revert to previous versions if issues arise
-- **Secret Management**: Secure handling of credentials and sensitive data
+Safe deployments: Rolling updates and built-in rollback support enable zero-downtime releases.
 
-### Infrastructure as Code
-- **Version Control**: Your entire infrastructure is Git-managed YAML
-- **Reproducibility**: Identical deployments across any Kubernetes cluster
-- **Audit Trail**: Track who changed what and when
-- **Disaster Recovery**: Rebuild your entire stack from YAML files
+Infrastructure as Code: All infrastructure is defined as version-controlled YAML, enabling reproducible deployments and easy recovery.
 
-### Production-Ready Patterns
-- **StatefulSets**: Stable MySQL storage that survives pod restarts
-- **Service Discovery**: Components find each other by name, not brittle IP addresses
-- **Resource Limits**: Prevent resource starvation and ensure fair sharing
-- **Security Contexts**: Run containers with minimal privileges
+Production-ready patterns: Uses Kubernetes primitives like Deployments, StatefulSets, Services, and resource limits to reflect real-world setups.
+```
 
 ## 📁 Project Structure
 
@@ -58,8 +45,8 @@ vvma-k8s/
 │       └── validate.yaml          # CI/CD
 ├── scripts/
 │   ├── deploy.sh                  # Deployment script
-│   └── validate.sh                # Pre-deployment validation
-├── Makefile                       # Convenient commands
+│   └── validate.sh                
+├── Makefile                      
 └── README.md                     
 ```
 

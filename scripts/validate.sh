@@ -12,7 +12,6 @@ NC='\033[0m'
 
 ERRORS=0
 
-
 validate_yaml() {
     local file=$1
     echo -n "Checking $file... "
@@ -56,7 +55,6 @@ for file in k8s/base/mailhog/*.yaml; do
 done
 echo ""
 
-# Check for common issues
 echo "=== Checking for Common Issues ==="
 
 echo -n "Checking for committed secret files... "

@@ -29,6 +29,3 @@ Thumbs.db
 .minikube/
 .kind/
 kubeconfig
-
-# Documentation build
-docs/_build/
