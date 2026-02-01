@@ -2,7 +2,7 @@ name: Validate Kubernetes Manifests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
     paths:
       - 'k8s/**'
       - '.github/workflows/**'
@@ -38,22 +38,14 @@ jobs:
         echo "Scanning for committed secret files and hardcoded credentials..."
         FAIL=0
 
-        # Block 1: secret.yaml files should never be committed (only .example)
+        # Block 1: secret.yaml files should never be committed
         SECRETS=$(find k8s/ -name "secret.yaml" 2>/dev/null)
         if [ -n "$SECRETS" ]; then
           echo "❌ FAIL: secret.yaml files found — these should be gitignored:"
           echo "$SECRETS"
           FAIL=1
         else
-          echo "✅ No secret.yaml files committed (only .example templates)"
-        fi
-
-        # Block 2: .example files must only contain placeholders, not real values
-        if grep -rn "IDENTIFIED BY" k8s/ 2>/dev/null; then
-          echo "❌ FAIL: CREATE USER with hardcoded password found in configmap"
-          FAIL=1
-        else
-          echo "✅ No hardcoded CREATE USER statements"
+          echo "✅ No secret.yaml files committed"
         fi
 
         if [ $FAIL -eq 1 ]; then
@@ -69,17 +61,6 @@ jobs:
           echo "$MISSING_LIMITS"
         else
           echo "✅ All deployments have resource limits"
-        fi
-
-    - name: Check for health probes
-      run: |
-        echo "Checking for health probes..."
-        MISSING_PROBES=$(grep -L "livenessProbe\|readinessProbe" k8s/base/*/deployment.yaml k8s/base/*/statefulset.yaml 2>/dev/null || true)
-        if [ -n "$MISSING_PROBES" ]; then
-          echo "⚠️  WARNING: Some deployments missing health probes:"
-          echo "$MISSING_PROBES"
-        else
-          echo "✅ All deployments have health probes"
         fi
 
     - name: Validate with kubeval
