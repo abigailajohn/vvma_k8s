@@ -1,0 +1,138 @@
+name: Validate Kubernetes Manifests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'k8s/**'
+
+jobs:
+  validate:
+    name: Validate YAML Files
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Validate YAML syntax
+      run: |
+        echo "Validating all YAML files..."
+        find k8s/ -name '*.yaml' -o -name '*.yml' | while read file; do
+          echo "Checking $file"
+          kubectl apply --dry-run=client -f "$file"
+        done
+
+    - name: Check for secrets in code
+      run: |
+        echo "Scanning for committed secret files and hardcoded credentials..."
+        FAIL=0
+
+        # Block 1: secret.yaml files should never be committed (only .example)
+        SECRETS=$(find k8s/ -name "secret.yaml" 2>/dev/null)
+        if [ -n "$SECRETS" ]; then
+          echo "❌ FAIL: secret.yaml files found — these should be gitignored:"
+          echo "$SECRETS"
+          FAIL=1
+        else
+          echo "✅ No secret.yaml files committed (only .example templates)"
+        fi
+
+        # Block 2: .example files must only contain placeholders, not real values
+        if grep -rn "IDENTIFIED BY" k8s/ 2>/dev/null; then
+          echo "❌ FAIL: CREATE USER with hardcoded password found in configmap"
+          FAIL=1
+        else
+          echo "✅ No hardcoded CREATE USER statements"
+        fi
+
+        if [ $FAIL -eq 1 ]; then
+          exit 1
+        fi
+
+    - name: Validate resource limits
+      run: |
+        echo "Checking for resource limits..."
+        MISSING_LIMITS=$(grep -L "resources:" k8s/base/*/deployment.yaml k8s/base/*/statefulset.yaml 2>/dev/null || true)
+        if [ -n "$MISSING_LIMITS" ]; then
+          echo "⚠️  WARNING: Some deployments missing resource limits:"
+          echo "$MISSING_LIMITS"
+        else
+          echo "✅ All deployments have resource limits"
+        fi
+
+    - name: Check for health probes
+      run: |
+        echo "Checking for health probes..."
+        MISSING_PROBES=$(grep -L "livenessProbe\|readinessProbe" k8s/base/*/deployment.yaml k8s/base/*/statefulset.yaml 2>/dev/null || true)
+        if [ -n "$MISSING_PROBES" ]; then
+          echo "⚠️  WARNING: Some deployments missing health probes:"
+          echo "$MISSING_PROBES"
+        else
+          echo "✅ All deployments have health probes"
+        fi
+
+    - name: Validate with kubeval
+      run: |
+        wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+        tar xf kubeval-linux-amd64.tar.gz
+        sudo mv kubeval /usr/local/bin
+        echo "Running kubeval..."
+        find k8s/ -name '*.yaml' | xargs kubeval --ignore-missing-schemas || true
+
+    - name: Summary
+      run: |
+        echo "✅ Validation complete!"
+        echo ""
+        echo "File structure:"
+        tree k8s/ || find k8s/ -type f
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run kubesec scan
+      run: |
+        wget https://github.com/controlplaneio/kubesec/releases/download/v2.13.0/kubesec_linux_amd64.tar.gz
+        tar -xvzf kubesec_linux_amd64.tar.gz
+        sudo mv kubesec /usr/local/bin/
+        
+        echo "Running security scan..."
+        find k8s/base -name 'deployment.yaml' -o -name 'statefulset.yaml' | while read file; do
+          echo "Scanning $file"
+          kubesec scan "$file" || true
+        done
+
+  lint:
+    name: Lint YAML
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install yamllint
+      run: pip install yamllint
+
+    - name: Run yamllint
+      run: |
+        yamllint -d "{extends: default, rules: {line-length: {max: 120}, indentation: {spaces: 2}}}" k8s/ || true

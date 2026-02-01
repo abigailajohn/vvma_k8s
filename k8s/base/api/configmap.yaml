@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vvma-configmap
+  namespace: vvma
+  labels:
+    app: vvma-api
+    component: backend
+data:
+  DB_HOST: mysql.vvma.svc.cluster.local 
+  DB_NAME: user_management
+  PORT: "3000"
+  SMTP_HOST: mailhog.vvma.svc.cluster.local
+  SMTP_PORT: "1025"
+  NODE_ENV: development

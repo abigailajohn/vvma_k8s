@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vvma-api-service
+  namespace: vvma
+  labels:
+    app: vvma-api
+    component: backend
+spec:
+  selector:
+    app: vvma-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+    name: http
+  type: NodePort
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800 
